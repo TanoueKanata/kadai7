@@ -9,15 +9,10 @@
 extern double bme();
 pthread_cond_t cvar;
 
-int count;
-
 void *func(void *arg){
-    int new_sockfd=(int) arg;
+    int new_sockfd=*((int *) arg);
+    char buff[1024];
     FILE *istream;
-    if(new_sockfd<0){
-            perror("accept error\n");
-            exit(1);
-    }
     istream=fdopen(new_sockfd,"r+");    // クライアントからデータを受け取る
     if(istream==NULL){
         perror("file open error\n");
@@ -29,19 +24,27 @@ void *func(void *arg){
         perror("setvbuf error\n");
         exit(1);
     }
+    while(1){
+         if(fgets(buff,1024,istream)==0) break;
+         if(strcmp(buff,"\r\n")==0) break;
+          printf("%s\n",buff); 
+    }
 
     //温度を測る
-    int temp;
+    sleep(10);
+    double temp;
     temp=bme();
-    fprintf(istream,"HTTP/1.1 200 OK\r\nContet-Type:text/html\r\n\r\n温度: %f\r\n",temp);
+    fprintf(istream,"HTTP/1.1 200 OK\r\nContet-Type: text/html\r\n\r\n Temperature:%f\r\n",temp);
+    sleep(1);
+    fclose(istream);
 }
 
 int main(){
-    pthread_cond_init(&cvar,NULL);
+    int sockfd,new_sockfd;
     int val;
     struct sockaddr_in serv_addr;
     // ソケットを作る
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sockfd<0){
         perror("socket error\n");
         exit(1);
@@ -71,7 +74,6 @@ int main(){
         perror("listen error\n");
         exit(1);
     }
-    int new_sockfd;
     pthread_t th0;
     while(1){
         new_sockfd=accept(sockfd,NULL,NULL);
