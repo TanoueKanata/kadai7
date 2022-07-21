@@ -6,7 +6,8 @@
 #include<errno.h>
 #include<stdlib.h>
 #include <pthread.h>
-extern int bme(int argc, char *argv[]);
+extern double bme();
+pthread_cond_t cvar;
 
 int count;
 
@@ -22,6 +23,7 @@ void *func(void *arg){
         perror("file open error\n");
         exit(1);
     }
+    int val;
     val=setvbuf(istream,NULL,_IONBF,0); //バッファーの制御
     if(val!=0){
         perror("setvbuf error\n");
@@ -35,7 +37,7 @@ void *func(void *arg){
 }
 
 int main(){
-    pthread_cond_init
+    pthread_cond_init(&cvar,NULL);
     int val;
     struct sockaddr_in serv_addr;
     // ソケットを作る
@@ -77,8 +79,7 @@ int main(){
             perror("accept error\n");
             exit(1);
         }
-        pthread_create(&th0, NULL, func, (void *)new_sockfd);
-
-        pthread_detach(&th0);
+        pthread_create(&th0, NULL, func, (void *)&new_sockfd);
+        pthread_detach(th0);
     }
 }
